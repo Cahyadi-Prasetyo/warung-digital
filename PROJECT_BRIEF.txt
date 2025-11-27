@@ -1,0 +1,394 @@
+# WARDIG (Warisan Digital) - Project Brief
+# Platform Digital untuk Produk Lokal UMKM Sungai Enam
+
+## OVERVIEW
+Platform digital yang menghubungkan produk lokal UMKM Sungai Enam dengan cerita di baliknya melalui QR Code, menciptakan emotional connection dan mendukung ekonomi lokal.
+
+## TARGET AUDIENCE
+- Primary: Masyarakat awam yang ingin mengetahui info produk, cerita pembuatan, sejarah, dan nilai budaya
+- Secondary: Wisatawan dan pecinta produk lokal
+
+## ADMIN
+- Single admin: Petugas kelurahan Sungai Enam yang mengurus UMKM di daerah tersebut
+
+## TECH STACK
+- Backend: Laravel (PHP)
+- Frontend: React + Inertia.js
+- Styling: Tailwind CSS
+- Database: MySQL
+- QR Generation: PHP QR Code Library
+
+## WEBSITE STRUCTURE
+
+### ADMIN PANEL (/admin/*)
+1. Dashboard Analytics
+   - Total produk terdaftar
+   - Total scan QR (harian/bulanan)
+   - Produk paling populer
+   - Grafik aktivitas scan
+   - Recent reviews
+
+2. Manajemen Produk (/admin/products)
+   - List produk dengan preview QR
+   - Form tambah/edit produk (nama, deskripsi, sejarah, filosofi)
+   - Upload video (max 2 menit, MP4)
+   - Upload galeri foto produk
+   - Generate QR Code (500x500px, PNG, dengan logo)
+   - Download QR Code
+
+3. Manajemen UMKM (/admin/umkm)
+   - Database penjual/pembuat
+   - Profil lengkap (nama, alamat, kontak, cerita)
+   - Assign produk ke UMKM
+
+4. Review Management (/admin/reviews)
+   - Moderasi review customer
+   - Approve/reject review
+   - Response ke review
+
+### PUBLIC PAGES (Diakses via QR)
+1. Product Landing (/product/{unique_code})
+   - Hero section dengan nama produk & foto utama
+   - Video dokumenter (autoplay muted, controls)
+   - Quick info (pembuat, lokasi)
+   - Navigation ke section lain
+
+2. Product Story (/product/{unique_code}/story)
+   - Sejarah produk
+   - Proses pembuatan (step-by-step)
+   - Filosofi & nilai budaya
+   - Galeri foto proses
+
+3. Maker Profile (/product/{unique_code}/maker)
+   - Profil UMKM/pembuat
+   - Lokasi & kontak
+   - Cerita di balik usaha
+   - Produk lainnya
+
+4. Gallery (/product/{unique_code}/gallery)
+   - Galeri foto produk
+   - Behind the scenes
+   - Zoom & lightbox functionality
+
+5. Reviews (/product/{unique_code}/reviews)
+   - Customer reviews & ratings
+   - Form tambah review (nama, rating, komentar)
+   - Photo reviews (optional)
+
+## DESIGN SYSTEM
+
+### Color Palette
+Primary Colors:
+- Primary Blue: #2563EB
+- Primary Dark: #1E40AF
+- Primary Light: #60A5FA
+
+Secondary Colors:
+- Accent Orange: #F59E0B
+- Accent Green: #10B981
+
+Neutral Colors:
+- Gray 50: #F8FAFC
+- Gray 100: #F1F5F9
+- Gray 500: #64748B
+- Gray 900: #1E293B
+
+Status Colors:
+- Success: #10B981
+- Warning: #F59E0B
+- Error: #EF4444
+
+### Typography
+- Heading: Inter (Bold/Semibold)
+- Body: Inter (Regular/Medium)
+- Accent: Poppins (untuk logo/brand)
+
+### Design Style
+- Creative design approach
+- Blue-based color scheme
+- Rounded corners, subtle shadows
+- Gradient buttons with hover effects
+- Clean, minimal forms
+- Sticky navigation with smooth scroll
+
+### Responsive Breakpoints
+- Mobile First: 320px - 768px
+- Tablet: 768px - 1024px
+- Desktop: 1024px+
+- Large Desktop: 1440px+
+
+## DATABASE SCHEMA
+
+### DATABASE RELATIONS (ERD)
+
+```
+┌─────────────────┐
+│     users       │ (Independent - Admin Authentication)
+│─────────────────│
+│ • id (PK)       │
+│ • name          │
+│ • email         │
+│ • password      │
+│ • role          │
+└─────────────────┘
+
+
+┌──────────────────────┐
+│   umkm_profiles      │
+│──────────────────────│
+│ • id (PK)            │
+│ • name               │
+│ • owner_name         │
+│ • address            │
+│ • phone              │
+│ • email              │
+│ • story              │
+│ • established_year   │
+│ • logo_path          │
+└──────────────────────┘
+           │
+           │ 1:N (One UMKM has Many Products)
+           ↓
+┌──────────────────────┐
+│      products        │
+│──────────────────────│
+│ • id (PK)            │
+│ • umkm_id (FK)       │──→ umkm_profiles.id
+│ • name               │
+│ • description        │
+│ • history            │
+│ • philosophy         │
+│ • video_path         │
+│ • qr_code_path       │
+│ • unique_code        │
+│ • status             │
+└──────────────────────┘
+           │
+           ├─────────────────────────────────────────┐
+           │                                         │
+           │ 1:N                          1:N        │ 1:N
+           ↓                              ↓          ↓
+┌─────────────────────┐    ┌──────────────────┐    ┌─────────────────┐
+│  product_images     │    │    qr_scans      │    │    reviews      │
+│─────────────────────│    │──────────────────│    │─────────────────│
+│ • id (PK)           │    │ • id (PK)        │    │ • id (PK)       │
+│ • product_id (FK)   │──→ │ • product_id(FK) │──→ │ • product_id(FK)│──→ products.id
+│ • image_path        │    │ • scanned_at     │    │ • customer_name │
+│ • alt_text          │    │ • ip_address     │    │ • rating        │
+│ • sort_order        │    │ • user_agent     │    │ • comment       │
+│ • is_featured       │    │ • location_data  │    │ • review_images │
+└─────────────────────┘    └──────────────────┘    │ • status        │
+                                                   └─────────────────┘
+```
+
+### RELATIONSHIP SUMMARY
+1. **umkm_profiles → products** (1:N)
+   - One UMKM can have multiple products
+   
+2. **products → product_images** (1:N)
+   - One product can have multiple images
+   
+3. **products → qr_scans** (1:N)
+   - One product can be scanned multiple times
+   
+4. **products → reviews** (1:N)
+   - One product can have multiple reviews
+   
+5. **users** (Independent)
+   - Admin authentication table
+
+---
+
+### TABLE DETAILS
+
+### umkm_profiles
+- id (Primary Key)
+- name (VARCHAR)
+- owner_name (VARCHAR)
+- address (TEXT)
+- phone (VARCHAR)
+- email (VARCHAR)
+- story (TEXT)
+- established_year (YEAR)
+- logo_path (VARCHAR)
+- created_at (TIMESTAMP)
+- updated_at (TIMESTAMP)
+
+### products
+- id (Primary Key)
+- umkm_id (Foreign Key → umkm_profiles.id)
+- name (VARCHAR)
+- description (TEXT)
+- history (TEXT)
+- philosophy (TEXT)
+- video_path (VARCHAR)
+- qr_code_path (VARCHAR)
+- unique_code (VARCHAR, UNIQUE)
+- status (ENUM: active, inactive)
+- created_at (TIMESTAMP)
+- updated_at (TIMESTAMP)
+
+### product_images
+- id (Primary Key)
+- product_id (Foreign Key → products.id)
+- image_path (VARCHAR)
+- alt_text (VARCHAR)
+- sort_order (INTEGER)
+- is_featured (BOOLEAN)
+- created_at (TIMESTAMP)
+
+### qr_scans
+- id (Primary Key)
+- product_id (Foreign Key → products.id)
+- scanned_at (TIMESTAMP)
+- ip_address (VARCHAR)
+- user_agent (TEXT)
+- location_data (JSON, optional)
+
+### reviews
+- id (Primary Key)
+- product_id (Foreign Key → products.id)
+- customer_name (VARCHAR)
+- rating (INTEGER, 1-5)
+- comment (TEXT)
+- review_images (JSON, optional)
+- status (ENUM: pending, approved, rejected)
+- created_at (TIMESTAMP)
+- updated_at (TIMESTAMP)
+
+### users
+- id (Primary Key)
+- name (VARCHAR)
+- email (VARCHAR, UNIQUE)
+- password (VARCHAR)
+- role (ENUM: admin)
+- created_at (TIMESTAMP)
+- updated_at (TIMESTAMP)
+
+## TECHNICAL SPECIFICATIONS
+
+### QR Code System
+- Generate unique code per produk
+- Size: 500x500px
+- Format: PNG
+- Custom logo di tengah QR
+- Tracking scan dengan analytics
+- Bulk download QR codes
+
+### Video System
+- Format: MP4
+- Maximum duration: 2 menit
+- Responsive video player
+- Autoplay muted dengan controls
+- Lazy loading untuk performance
+
+### Image Gallery
+- Multiple upload dengan drag & drop
+- Image compression otomatis
+- Lightbox/modal view
+- Lazy loading
+- Support untuk review images
+
+### Analytics Dashboard
+- Real-time scan tracking
+- Geographic data (jika available)
+- Popular products ranking
+- Time-based analytics (daily/monthly)
+- Review statistics
+
+## USER JOURNEY
+
+### Admin Journey
+1. Login ke admin panel
+2. Dashboard overview
+3. Tambah/edit UMKM profile
+4. Tambah produk baru
+5. Upload video dan foto
+6. Generate QR code
+7. Download QR code
+8. Monitor analytics
+9. Moderasi reviews
+
+### Customer Journey
+1. Scan QR code pada produk
+2. Landing di halaman produk
+3. Watch video dokumenter
+4. Explore story dan filosofi
+5. View maker profile
+6. Browse gallery
+7. Read/write reviews
+8. Share ke social media (optional)
+
+## DEVELOPMENT ROADMAP
+
+### Phase 1: Core Setup (Week 1-2)
+- Database migration
+- Authentication system
+- Basic admin panel layout
+- User management
+
+### Phase 2: Product Management (Week 3-4)
+- CRUD produk & UMKM
+- File upload system
+- QR generation functionality
+- Basic admin dashboard
+
+### Phase 3: Public Pages (Week 5-6)
+- Product landing pages
+- Responsive design implementation
+- Video integration
+- Navigation system
+
+### Phase 4: Advanced Features (Week 7-8)
+- Analytics dashboard
+- Review system
+- Gallery functionality
+- QR scan tracking
+
+### Phase 5: Polish & Deploy (Week 9-10)
+- Performance optimization
+- SEO optimization
+- Testing & bug fixes
+- Production deployment
+
+## CONTENT REQUIREMENTS
+
+### Video Content
+- Format: MP4
+- Maximum duration: 2 menit
+- Recommended resolution: 1080p
+- Autoplay muted dengan controls
+
+### Image Content
+- Product photos (multiple angles)
+- Process documentation
+- UMKM profile photos
+- Review photos (optional)
+
+### Text Content
+- Product name & description
+- Historical background
+- Philosophy & cultural values
+- UMKM story & profile
+- Contact information
+
+## SUCCESS METRICS
+- Number of QR scans per product
+- User engagement time on product pages
+- Review submission rate
+- Admin efficiency in content management
+- Mobile responsiveness score
+
+## FUTURE ENHANCEMENTS (Post-Launch)
+- Multi-language support (English)
+- Social media integration
+- Advanced analytics
+- Mobile app version
+- E-commerce integration
+- Augmented Reality features
+
+---
+Created: [Current Date]
+Last Updated: [Current Date]
+Project: WARDIG - Warisan Digital
+Developer: Full Stack Development Team
